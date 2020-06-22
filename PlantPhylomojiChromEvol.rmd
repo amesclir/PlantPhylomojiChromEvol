@@ -1,0 +1,138 @@
+---
+title: "Color y recompensas"
+author: "Marcial"
+date: "01/09/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+1. Install and load packages
+
+```{r, echo = F}
+#devtools::install_github("jinyizju/V.PhyloMaker")
+library(V.PhyloMaker)
+
+
+```
+
+
+3. Frequency matrix.
+
+```{r, echo = F}
+mydata <- read.csv("Dataset.csv") 
+dim(mydata)
+```
+
+
+
+3. Create your tree and plot
+
+```{r, echo = F}
+
+
+names(mydata)
+genera<-sapply(strsplit(as.character(mydata$Species),"_"),function(x) x[1])
+epithet<-sapply(strsplit(as.character(mydata$Species),"_"),function(x) x[2])
+
+library(Taxonstand)
+correctednames <- TPL(genus = genera, species = epithet, infrasp = NULL,infra = TRUE, corr = TRUE, diffchar = 2, max.distance = 1,version = "1.1", encoding = "UTF-8", author = TRUE,drop.lower.level = FALSE, file = "", silent = TRUE, repeats = 6)
+
+write.csv(correctednames,"correctednames.csv", row.names = FALSE)
+
+
+data <- data.frame(species = mydata$Species, genus = genera, family = mydata$Family)
+my.phylo.maker <- phylo.maker(data, tree = GBOTB.extended, nodes = nodes.info.1, output.sp.list = TRUE, output.tree = FALSE, scenarios = c("S1","S2","S3"), r = 1)
+
+
+
+pdffn = paste0("PlantPhylomoji", ".scenario3.pdf")
+pdf(file=pdffn, width=6, height=18)
+plot(my.phylo.maker$scenario.3, cex = 0.5)
+dev.off()
+write.tree(my.phylo.maker$scenario.3, file = "PlantPhylomoji3.tree")
+
+
+pdffn = paste0("PlantPhylomoji", ".scenario2.pdf")
+pdf(file=pdffn, width=6, height=18)
+plot(my.phylo.maker$scenario.2$run.1, cex = 0.5)
+dev.off()
+write.tree(my.phylo.maker$scenario.2$run.1, file = "PlantPhylomoji2.tree")
+
+pdffn = paste0("PlantPhylomoji", ".scenario1.pdf")
+pdf(file=pdffn, width=6, height=18)
+plot(my.phylo.maker$scenario.1, cex = 0.5)
+dev.off()
+write.tree(my.phylo.maker$scenario.1, file = "PlantPhylomoji1.tree")
+
+
+```
+
+
+phylomojiplots
+```{r}
+
+library(ggtree)
+library(emojifont)
+library(ggplot2)
+library(ggnewscale)
+library(ggstance)
+
+mydata
+
+mytree2 <- my.phylo.maker$scenario.2$run.1
+mytree2$tip.label <- as.character(mydata[,2][match(mytree2$tip.label,mydata[,4])])
+pdf(file="PlantPhylomojiv1.pdf", width=18, height=18)
+ggtree(mytree2, layout="circular") +
+  geom_tiplab(aes(color=label), parse='emoji', size=6, vjust=0.5, hjust = 0.5, offset = 0.9) +
+  labs(title="plant phylomoji and chromosome and genome size evolution")
+dev.off()
+
+pdf(file="PlantPhylomojiv2.pdf", width=6, height=6)
+ggtree(mytree2, layout="circular", branch.length='none') +   geom_tiplab(aes(color=label), parse='emoji', size=6, vjust=0.5, hjust = 0.5, offset = 0.9) +
+  labs(title="plant phylomoji and chromosome and genome size evolution")
+dev.off()
+
+
+tree <- mytree2
+circ <- ggtree(tree, layout = "circular",branch.length='none',size=2.5, show.legend = FALSE) + geom_tiplab(aes(color=label), parse='emoji', size=12, vjust=0.5, hjust = 0.5, offset = 0.9, show.legend = FALSE)
+circ
+n <- mydata[,5]
+GS <- mydata[,6]
+Exp_n <-  7*2^(mydata[,7])*3^(mydata[,8])*(mydata[,9])
+Exp_GS <- 1.73*2^(mydata[,7])*3^(mydata[,8])*(mydata[,9])
+
+df <- cbind(n, Exp_n)
+rownames(df) <- mydata[,2]
+
+p1 <- gheatmap(circ, df, offset=1.8, width=.1, colnames_angle=95, colnames_offset_y = .25) + 
+  scale_fill_viridis_c(option="C", na.value = 'white', name="n")
+p1
+
+df2 <- cbind(GS, Exp_GS)
+rownames(df2) <- mydata[,2]
+
+p2 <- p1 + new_scale_fill()
+gheatmap(p2, df2, offset=3.4, width=.1, colnames_angle=90, colnames_offset_y = .25) +
+    scale_fill_viridis_c(option="C", na.value = 'white', name="GS (pg)")
+
+
+p1 <- gheatmap(circ, log(df,10), offset=1.8, width=.1, colnames_angle=95, colnames_offset_y = .25) + 
+  scale_fill_viridis_c(option="C", na.value = 'white', name="n")
+p2 <- p1 + new_scale_fill()
+gheatmap(p2, log(df2,10), offset=3.4, width=.1, colnames_angle=90, colnames_offset_y = .25) +
+    scale_fill_viridis_c(option="C", na.value = 'white', name="GS (pg)")
+
+p1 <- gheatmap(circ, df, offset=1.8, width=.1, colnames_angle=95, colnames_offset_y = .25) + 
+  scale_fill_gradient(low = "orange", high = "darkorange4", na.value = 'white', name="n")
+p2 <- p1 + new_scale_fill()
+gheatmap(p2, df2, offset=3.4, width=.1, colnames_angle=90, colnames_offset_y = .25) +
+    scale_fill_gradient(low = "cyan", high = "darkblue", na.value = 'white', name="GS (pg)")
+
+p1 <- gheatmap(circ, log(df,10), offset=1.8, width=.1, colnames_angle=95, colnames_offset_y = .25) + 
+  scale_fill_gradient(low = "orange", high = "darkorange4", na.value = 'white', name="n")
+p2 <- p1 + new_scale_fill()
+gheatmap(p2, log(df2,10), offset=3.4, width=.1, colnames_angle=90, colnames_offset_y = .25) +
+    scale_fill_gradient(low = "cyan", high = "darkblue", na.value = 'white', name="GS (pg)")
+
+```
+
