@@ -1,7 +1,7 @@
 # PlantPhylomojiChromEvol
 PlantPhylomojiChromEvol
 
-This is based on the orginal idea of G Huertas Ramos https://github.com/ghuertaramos/PlantPhylomoji
+This is based on the orginal idea of G Huerta Ramos https://github.com/ghuertaramos/PlantPhylomoji
 
 These are some of the packages that has been used here:
 
